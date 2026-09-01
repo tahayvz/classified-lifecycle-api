@@ -194,7 +194,15 @@ class ClassifiedLifecycleIT extends AbstractPostgresIT {
 
         assertThat(stats.getStatusCode()).isEqualTo(HttpStatus.OK);
         assertThat(stats.getBody()).isNotNull();
-        assertThat(stats.getBody().toString()).contains("3");
+        assertThat(stats.getBody().get("totalClassifieds")).isEqualTo(3);
+
+        @SuppressWarnings("unchecked")
+        Map<String, Integer> byStatus = (Map<String, Integer>) stats.getBody().get("statistics");
+
+        assertThat(byStatus)
+                .containsEntry(ClassifiedStatus.ONAY_BEKLIYOR.name(), 2)
+                .containsEntry(ClassifiedStatus.AKTIF.name(), 1)
+                .hasSize(2);
     }
 
     @Test

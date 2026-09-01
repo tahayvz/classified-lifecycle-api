@@ -45,6 +45,17 @@ class ClassifiedStatisticsTest {
     }
 
     @Test
+    void of_shouldTreatANullCountAsZero() {
+        Map<ClassifiedStatus, Long> source = new HashMap<>();
+        source.put(ClassifiedStatus.AKTIF, null);
+        source.put(ClassifiedStatus.DEAKTIF, 4L);
+
+        ClassifiedStatistics statistics = ClassifiedStatistics.of(source);
+
+        assertThat(statistics.total()).isEqualTo(4L);
+    }
+
+    @Test
     void countByStatus_shouldBeUnmodifiable() {
         ClassifiedStatistics statistics = ClassifiedStatistics.of(Map.of(ClassifiedStatus.AKTIF, 1L));
 

@@ -15,7 +15,7 @@ public class PerformanceLoggingAspect {
 
     @Around("within(com.marketplace.classifieds.adapter.in.web.controller..*)")
     public Object logExecutionTime(ProceedingJoinPoint joinPoint) throws Throwable {
-        long start = System.currentTimeMillis();
+        long startNanos = System.nanoTime();
         String className = joinPoint.getSignature().getDeclaringType().getSimpleName();
         String methodName = joinPoint.getSignature().getName();
 
@@ -25,7 +25,7 @@ public class PerformanceLoggingAspect {
         try {
             result = joinPoint.proceed();
         } finally {
-            long duration = System.currentTimeMillis() - start;
+            long duration = (System.nanoTime() - startNanos) / 1_000_000;
 
             log.info("{}.{}() finished in {} ms", className, methodName, duration);
 

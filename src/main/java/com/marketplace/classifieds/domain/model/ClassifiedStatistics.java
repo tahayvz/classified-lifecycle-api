@@ -17,7 +17,9 @@ public record ClassifiedStatistics(Map<ClassifiedStatus, Long> countByStatus, lo
     public static ClassifiedStatistics of(Map<ClassifiedStatus, Long> countByStatus) {
         long total = countByStatus == null
                 ? 0L
-                : countByStatus.values().stream().mapToLong(Long::longValue).sum();
+                : countByStatus.values().stream()
+                        .mapToLong(count -> count == null ? 0L : count)
+                        .sum();
 
         return new ClassifiedStatistics(countByStatus, total);
     }
