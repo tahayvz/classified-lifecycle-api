@@ -1,8 +1,8 @@
 package com.marketplace.classifieds.domain.port.in;
 
-import com.marketplace.classifieds.adapter.in.web.dto.response.ClassifiedStatisticsResponse;
+import com.marketplace.classifieds.domain.model.ClassifiedStatistics;
 
 public interface GetStatisticsUseCase {
 
-    ClassifiedStatisticsResponse getStatistics();
+    ClassifiedStatistics getStatistics();
 }

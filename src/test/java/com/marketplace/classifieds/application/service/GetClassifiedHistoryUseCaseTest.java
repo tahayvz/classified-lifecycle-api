@@ -1,6 +1,5 @@
 package com.marketplace.classifieds.application.service;
 
-import com.marketplace.classifieds.adapter.in.web.dto.response.StatusHistoryResponse;
 import com.marketplace.classifieds.domain.enums.ClassifiedCategory;
 import com.marketplace.classifieds.domain.enums.ClassifiedStatus;
 import com.marketplace.classifieds.domain.exception.ClassifiedNotFoundException;
@@ -80,18 +79,18 @@ class GetClassifiedHistoryUseCaseTest {
         when(historyPort.findByClassifiedIdOrderByChangedAtDesc(id))
                 .thenReturn(List.of(h2, h1));
 
-        List<StatusHistoryResponse> result = service.getStatusHistory(id);
+        List<ClassifiedStatusHistory> result = service.getStatusHistory(id);
 
         assertEquals(2, result.size());
 
-        StatusHistoryResponse first = result.get(0);
+        ClassifiedStatusHistory first = result.get(0);
         assertEquals(2L, first.getId());
         assertEquals(ClassifiedStatus.AKTIF, first.getPreviousStatus());
         assertEquals(ClassifiedStatus.DEAKTIF, first.getNewStatus());
         assertEquals("system", first.getChangedBy());
         assertEquals("Süre doldu", first.getReason());
 
-        StatusHistoryResponse second = result.get(1);
+        ClassifiedStatusHistory second = result.get(1);
         assertEquals(1L, second.getId());
         assertEquals(ClassifiedStatus.ONAY_BEKLIYOR, second.getPreviousStatus());
         assertEquals(ClassifiedStatus.AKTIF, second.getNewStatus());

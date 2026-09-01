@@ -1,9 +1,9 @@
 package com.marketplace.classifieds.domain.port.in;
 
-import com.marketplace.classifieds.adapter.in.web.dto.request.UpdateClassifiedStatusRequest;
-import com.marketplace.classifieds.adapter.in.web.dto.response.ClassifiedResponse;
+import com.marketplace.classifieds.domain.model.Classified;
+import com.marketplace.classifieds.domain.command.UpdateClassifiedStatusCommand;
 
 public interface UpdateClassifiedStatusUseCase {
 
-    ClassifiedResponse updateStatus(Long id, UpdateClassifiedStatusRequest request, String changedBy);
+    Classified updateStatus(Long id, UpdateClassifiedStatusCommand command);
 }

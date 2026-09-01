@@ -13,6 +13,7 @@ import org.springframework.boot.test.autoconfigure.orm.jpa.DataJpaTest;
 import org.springframework.context.annotation.Import;
 
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -98,28 +99,22 @@ class ClassifiedPersistenceAdapterTest {
     }
 
     @Test
-    void countByStatusGrouped_shouldReturnOneRowPerUsedStatus() {
+    void countByStatus_shouldReturnOneEntryPerUsedStatus() {
         adapter.save(newClassified("daire", ClassifiedCategory.EMLAK));
         adapter.save(newClassified("villa", ClassifiedCategory.EMLAK));
         adapter.save(newClassified("kanepe", ClassifiedCategory.ALISVERIS));
 
-        List<Object[]> grouped = adapter.countByStatusGrouped();
+        Map<ClassifiedStatus, Long> counts = adapter.countByStatus();
 
-        assertThat(grouped).hasSize(2);
-        assertThat(grouped)
-                .anySatisfy(row -> {
-                    assertThat(row[0]).isEqualTo(ClassifiedStatus.ONAY_BEKLIYOR);
-                    assertThat(row[1]).isEqualTo(2L);
-                })
-                .anySatisfy(row -> {
-                    assertThat(row[0]).isEqualTo(ClassifiedStatus.AKTIF);
-                    assertThat(row[1]).isEqualTo(1L);
-                });
+        assertThat(counts)
+                .hasSize(2)
+                .containsEntry(ClassifiedStatus.ONAY_BEKLIYOR, 2L)
+                .containsEntry(ClassifiedStatus.AKTIF, 1L);
     }
 
     @Test
-    void countByStatusGrouped_shouldBeEmpty_whenNoClassifiedExists() {
-        assertThat(adapter.countByStatusGrouped()).isEmpty();
+    void countByStatus_shouldBeEmpty_whenNoClassifiedExists() {
+        assertThat(adapter.countByStatus()).isEmpty();
     }
 
     @Test

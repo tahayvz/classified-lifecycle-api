@@ -2,12 +2,14 @@ package com.marketplace.classifieds.adapter.out.persistence;
 
 import com.marketplace.classifieds.adapter.out.persistence.jpa.ClassifiedJpaRepository;
 import com.marketplace.classifieds.domain.enums.ClassifiedCategory;
+import com.marketplace.classifieds.domain.enums.ClassifiedStatus;
 import com.marketplace.classifieds.domain.model.Classified;
 import com.marketplace.classifieds.domain.port.out.ClassifiedPort;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Component;
 
-import java.util.List;
+import java.util.EnumMap;
+import java.util.Map;
 import java.util.Optional;
 
 @Component
@@ -32,7 +34,15 @@ public class ClassifiedPersistenceAdapter implements ClassifiedPort {
     }
 
     @Override
-    public List<Object[]> countByStatusGrouped() {
-        return repository.countByStatusGrouped();
+    public Map<ClassifiedStatus, Long> countByStatus() {
+        Map<ClassifiedStatus, Long> counts = new EnumMap<>(ClassifiedStatus.class);
+
+        for (Object[] row : repository.countByStatusGrouped()) {
+            if (row[0] instanceof ClassifiedStatus status) {
+                counts.put(status, row[1] == null ? 0L : ((Number) row[1]).longValue());
+            }
+        }
+
+        return counts;
     }
 }

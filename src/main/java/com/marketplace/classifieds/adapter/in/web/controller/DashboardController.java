@@ -2,6 +2,7 @@ package com.marketplace.classifieds.adapter.in.web.controller;
 
 import com.marketplace.classifieds.domain.port.in.GetStatisticsUseCase;
 import com.marketplace.classifieds.adapter.in.web.dto.response.ClassifiedStatisticsResponse;
+import com.marketplace.classifieds.adapter.in.web.mapper.ClassifiedWebMapper;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.media.Content;
 import io.swagger.v3.oas.annotations.media.Schema;
@@ -33,6 +34,6 @@ public class DashboardController {
     })
     @GetMapping("/statistics")
     public ClassifiedStatisticsResponse getStatistics() {
-        return getStatisticsUseCase.getStatistics();
+        return ClassifiedWebMapper.toResponse(getStatisticsUseCase.getStatistics());
     }
 }

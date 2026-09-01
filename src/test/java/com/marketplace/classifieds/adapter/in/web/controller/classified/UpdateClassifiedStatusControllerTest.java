@@ -3,7 +3,7 @@ package com.marketplace.classifieds.adapter.in.web.controller.classified;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.marketplace.classifieds.adapter.in.web.controller.ClassifiedController;
 import com.marketplace.classifieds.adapter.in.web.dto.request.UpdateClassifiedStatusRequest;
-import com.marketplace.classifieds.adapter.in.web.dto.response.ClassifiedResponse;
+import com.marketplace.classifieds.domain.model.Classified;
 import com.marketplace.classifieds.adapter.in.web.exception.GlobalExceptionHandler;
 import com.marketplace.classifieds.domain.enums.ClassifiedCategory;
 import com.marketplace.classifieds.domain.enums.ClassifiedStatus;
@@ -75,7 +75,7 @@ class UpdateClassifiedStatusControllerTest {
         UpdateClassifiedStatusRequest request =
                 new UpdateClassifiedStatusRequest(ClassifiedStatus.DEAKTIF, "Sahibi değişti");
 
-        ClassifiedResponse fakeResponse = ClassifiedResponse.builder()
+        Classified fakeResponse = Classified.builder()
                 .id(10L)
                 .title("Test")
                 .description("desc")
@@ -84,7 +84,7 @@ class UpdateClassifiedStatusControllerTest {
                 .createdAt(LocalDateTime.now())
                 .build();
 
-        when(updateStatusUseCase.updateStatus(anyLong(), any(), any()))
+        when(updateStatusUseCase.updateStatus(anyLong(), any()))
                 .thenReturn(fakeResponse);
 
         mockMvc.perform(put("/api/v1/classifieds/10/status")
@@ -99,7 +99,7 @@ class UpdateClassifiedStatusControllerTest {
         UpdateClassifiedStatusRequest request =
                 new UpdateClassifiedStatusRequest(ClassifiedStatus.AKTIF, "neden");
 
-        when(updateStatusUseCase.updateStatus(anyLong(), any(), any()))
+        when(updateStatusUseCase.updateStatus(anyLong(), any()))
                 .thenThrow(new ClassifiedNotFoundException("İlan bulunamadı"));
 
         mockMvc.perform(put("/api/v1/classifieds/999/status")
@@ -114,7 +114,7 @@ class UpdateClassifiedStatusControllerTest {
         UpdateClassifiedStatusRequest request =
                 new UpdateClassifiedStatusRequest(ClassifiedStatus.AKTIF, "neden");
 
-        when(updateStatusUseCase.updateStatus(anyLong(), any(), any()))
+        when(updateStatusUseCase.updateStatus(anyLong(), any()))
                 .thenThrow(new InvalidStatusTransitionException("Geçersiz geçiş"));
 
         mockMvc.perform(put("/api/v1/classifieds/10/status")
@@ -129,7 +129,7 @@ class UpdateClassifiedStatusControllerTest {
         UpdateClassifiedStatusRequest request =
                 new UpdateClassifiedStatusRequest(ClassifiedStatus.AKTIF, "neden");
 
-        when(updateStatusUseCase.updateStatus(anyLong(), any(), any()))
+        when(updateStatusUseCase.updateStatus(anyLong(), any()))
                 .thenThrow(new SameStatusException("İlan zaten bu durumda"));
 
         mockMvc.perform(put("/api/v1/classifieds/10/status")
@@ -144,7 +144,7 @@ class UpdateClassifiedStatusControllerTest {
         UpdateClassifiedStatusRequest request =
                 new UpdateClassifiedStatusRequest(ClassifiedStatus.DEAKTIF, "neden");
 
-        when(updateStatusUseCase.updateStatus(anyLong(), any(), any()))
+        when(updateStatusUseCase.updateStatus(anyLong(), any()))
                 .thenThrow(new RuntimeException("Patladı"));
 
         mockMvc.perform(put("/api/v1/classifieds/77/status")

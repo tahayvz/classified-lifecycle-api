@@ -1,8 +1,8 @@
 package com.marketplace.classifieds.domain.port.in;
 
-import com.marketplace.classifieds.adapter.in.web.dto.response.ClassifiedResponse;
+import com.marketplace.classifieds.domain.model.Classified;
 
 public interface GetClassifiedUseCase {
 
-    ClassifiedResponse get(Long id);
+    Classified get(Long id);
 }

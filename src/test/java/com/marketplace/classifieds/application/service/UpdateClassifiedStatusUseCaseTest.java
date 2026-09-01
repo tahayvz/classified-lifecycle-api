@@ -1,7 +1,6 @@
 package com.marketplace.classifieds.application.service;
 
-import com.marketplace.classifieds.adapter.in.web.dto.request.UpdateClassifiedStatusRequest;
-import com.marketplace.classifieds.adapter.in.web.dto.response.ClassifiedResponse;
+import com.marketplace.classifieds.domain.command.UpdateClassifiedStatusCommand;
 import com.marketplace.classifieds.domain.enums.ClassifiedCategory;
 import com.marketplace.classifieds.domain.enums.ClassifiedStatus;
 import com.marketplace.classifieds.domain.exception.ClassifiedNotFoundException;
@@ -60,8 +59,8 @@ class UpdateClassifiedStatusUseCaseTest {
                 .endDate(now.plusWeeks(3))
                 .build();
 
-        UpdateClassifiedStatusRequest req =
-                new UpdateClassifiedStatusRequest(ClassifiedStatus.DEAKTIF, "Sahibi değişti");
+        UpdateClassifiedStatusCommand req =
+                new UpdateClassifiedStatusCommand(ClassifiedStatus.DEAKTIF, "Sahibi değişti", "admin");
 
         when(classifiedPort.findById(id)).thenReturn(Optional.of(entity));
         when(classifiedPort.save(entity)).thenReturn(entity);
@@ -73,7 +72,7 @@ class UpdateClassifiedStatusUseCaseTest {
             return null;
         }).when(statusService).changeStatus(any(), any(), anyString(), anyString());
 
-        ClassifiedResponse response = service.updateStatus(id, req, "admin");
+        Classified response = service.updateStatus(id, req);
 
         verify(classifiedPort).save(entity);
 
@@ -84,13 +83,13 @@ class UpdateClassifiedStatusUseCaseTest {
     @Test
     void updateStatus_shouldThrowException_whenNotFound() {
         Long id = 999L;
-        UpdateClassifiedStatusRequest req =
-                new UpdateClassifiedStatusRequest(ClassifiedStatus.DEAKTIF, "Sebep");
+        UpdateClassifiedStatusCommand req =
+                new UpdateClassifiedStatusCommand(ClassifiedStatus.DEAKTIF, "Sebep", "admin");
 
         when(classifiedPort.findById(id)).thenReturn(Optional.empty());
 
         assertThrows(ClassifiedNotFoundException.class,
-                () -> service.updateStatus(id, req, "admin"));
+                () -> service.updateStatus(id, req));
 
         verify(classifiedPort).findById(id);
         verify(statusService, never()).changeStatus(any(), any(), anyString(), anyString());
@@ -113,8 +112,8 @@ class UpdateClassifiedStatusUseCaseTest {
                 .endDate(now.plusWeeks(4))
                 .build();
 
-        UpdateClassifiedStatusRequest req =
-                new UpdateClassifiedStatusRequest(ClassifiedStatus.AKTIF, "Tüm şartlar sağlandı");
+        UpdateClassifiedStatusCommand req =
+                new UpdateClassifiedStatusCommand(ClassifiedStatus.AKTIF, "Tüm şartlar sağlandı", "admin");
 
         when(classifiedPort.findById(id)).thenReturn(Optional.of(entity));
 
@@ -122,7 +121,7 @@ class UpdateClassifiedStatusUseCaseTest {
                 .when(statusService)
                 .changeStatus(any(), any(), anyString(), anyString());
 
-        assertThrows(RuntimeException.class, () -> service.updateStatus(id, req, "admin"));
+        assertThrows(RuntimeException.class, () -> service.updateStatus(id, req));
 
         verify(classifiedPort, never()).save(any());
     }

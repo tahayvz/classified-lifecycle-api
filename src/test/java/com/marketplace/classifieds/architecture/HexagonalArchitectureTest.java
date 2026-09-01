@@ -36,15 +36,11 @@ class HexagonalArchitectureTest {
     }
 
     @Test
-    void domainCoreMustNotDependOnAdapters() {
+    void domainMustNotDependOnAdapters() {
         ArchRule rule = noClasses()
-                .that().resideInAnyPackage(
-                        BASE + ".domain.model..",
-                        BASE + ".domain.service..",
-                        BASE + ".domain.enums..",
-                        BASE + ".domain.port.out..")
+                .that().resideInAPackage(BASE + ".domain..")
                 .should().dependOnClassesThat().resideInAPackage(BASE + ".adapter..")
-                .because("the domain core must not know how it is delivered or persisted");
+                .because("the domain must not know how it is delivered or persisted");
 
         rule.check(classes);
     }

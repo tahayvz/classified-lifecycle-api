@@ -1,7 +1,8 @@
 package com.marketplace.classifieds.adapter.in.web.controller.dashboard;
 
 import com.marketplace.classifieds.adapter.in.web.controller.DashboardController;
-import com.marketplace.classifieds.adapter.in.web.dto.response.ClassifiedStatisticsResponse;
+import com.marketplace.classifieds.domain.enums.ClassifiedStatus;
+import com.marketplace.classifieds.domain.model.ClassifiedStatistics;
 import com.marketplace.classifieds.adapter.in.web.exception.GlobalExceptionHandler;
 import com.marketplace.classifieds.domain.port.in.GetStatisticsUseCase;
 import org.junit.jupiter.api.Test;
@@ -39,8 +40,9 @@ class DashboardControllerTest {
     @Test
     void getStatistics_shouldReturn200_whenSuccessful() throws Exception {
 
-        ClassifiedStatisticsResponse fakeStats = new ClassifiedStatisticsResponse(
-                Map.of("Aktif", 70L, "Deaktif", 30L), 100L);
+        ClassifiedStatistics fakeStats = ClassifiedStatistics.of(Map.of(
+                ClassifiedStatus.AKTIF, 70L,
+                ClassifiedStatus.DEAKTIF, 30L));
 
         when(statisticsUseCase.getStatistics()).thenReturn(fakeStats);
 
@@ -48,8 +50,8 @@ class DashboardControllerTest {
                         .accept(MediaType.APPLICATION_JSON))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.totalClassifieds").value(100))
-                .andExpect(jsonPath("$.statistics.Aktif").value(70))
-                .andExpect(jsonPath("$.statistics.Deaktif").value(30));
+                .andExpect(jsonPath("$.statistics.AKTIF").value(70))
+                .andExpect(jsonPath("$.statistics.DEAKTIF").value(30));
     }
 
     @Test

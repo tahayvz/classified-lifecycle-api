@@ -5,6 +5,7 @@ import com.marketplace.classifieds.adapter.in.web.dto.request.CreateClassifiedRe
 import com.marketplace.classifieds.adapter.in.web.dto.request.UpdateClassifiedStatusRequest;
 import com.marketplace.classifieds.adapter.in.web.dto.response.ClassifiedResponse;
 import com.marketplace.classifieds.adapter.in.web.dto.response.StatusHistoryResponse;
+import com.marketplace.classifieds.adapter.in.web.mapper.ClassifiedWebMapper;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.media.ArraySchema;
 import io.swagger.v3.oas.annotations.media.Content;
@@ -24,6 +25,8 @@ import java.util.List;
 @RequestMapping("/api/v1/classifieds")
 @Tag(name = "Classifieds", description = "İlan CRUD & Durum Yönetimi")
 public class ClassifiedController {
+
+    private static final String ACTOR = "system";
 
     private final CreateClassifiedUseCase createClassifiedUseCase;
     private final GetClassifiedUseCase getClassifiedUseCase;
@@ -46,7 +49,8 @@ public class ClassifiedController {
     @ResponseStatus(HttpStatus.CREATED)
     @PostMapping
     public ClassifiedResponse create(@Valid @RequestBody CreateClassifiedRequest request) {
-        return createClassifiedUseCase.create(request);
+        return ClassifiedWebMapper.toResponse(
+                createClassifiedUseCase.create(ClassifiedWebMapper.toCommand(request, ACTOR)));
     }
 
     @Operation(
@@ -63,12 +67,12 @@ public class ClassifiedController {
     })
     @GetMapping("/{id}")
     public ClassifiedResponse get(@PathVariable Long id) {
-        return getClassifiedUseCase.get(id);
+        return ClassifiedWebMapper.toResponse(getClassifiedUseCase.get(id));
     }
 
     @Operation(
             summary = "İlan durumunu güncelle",
-            description = "İlan durumunu (ONAY_BEKLIYOR, AKTIF, DEAKTIF, MUKERRER) günceller ve geçmişe kayıt ekler."
+            description = "İlan durumunu (ONAY_BEKLIYOR, AKTIF, DEAKTIF) günceller ve geçmişe kayıt ekler."
     )
     @ApiResponses({
             @ApiResponse(
@@ -84,7 +88,8 @@ public class ClassifiedController {
             @PathVariable Long id,
             @Valid @RequestBody UpdateClassifiedStatusRequest request
     ) {
-        return updateClassifiedStatusUseCase.updateStatus(id, request, "system");
+        return ClassifiedWebMapper.toResponse(
+                updateClassifiedStatusUseCase.updateStatus(id, ClassifiedWebMapper.toCommand(request, ACTOR)));
     }
 
     @Operation(
@@ -103,6 +108,6 @@ public class ClassifiedController {
     })
     @GetMapping("/{id}/history")
     public List<StatusHistoryResponse> getHistory(@PathVariable Long id) {
-        return getClassifiedHistoryUseCase.getStatusHistory(id);
+        return ClassifiedWebMapper.toHistoryResponses(getClassifiedHistoryUseCase.getStatusHistory(id));
     }
 }

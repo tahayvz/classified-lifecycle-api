@@ -1,7 +1,7 @@
 package com.marketplace.classifieds.adapter.in.web.controller.classified;
 
 import com.marketplace.classifieds.adapter.in.web.controller.ClassifiedController;
-import com.marketplace.classifieds.adapter.in.web.dto.response.ClassifiedResponse;
+import com.marketplace.classifieds.domain.model.Classified;
 import com.marketplace.classifieds.adapter.in.web.exception.GlobalExceptionHandler;
 import com.marketplace.classifieds.domain.enums.ClassifiedCategory;
 import com.marketplace.classifieds.domain.enums.ClassifiedStatus;
@@ -63,7 +63,7 @@ class GetClassifiedControllerTest {
 
     @Test
     void get_shouldReturn200_whenFound() throws Exception {
-        ClassifiedResponse response = ClassifiedResponse.builder()
+        Classified response = Classified.builder()
                 .id(50L)
                 .title("Satılık Araba")
                 .description("Temiz araç")

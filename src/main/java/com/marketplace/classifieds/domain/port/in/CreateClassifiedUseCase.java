@@ -1,9 +1,9 @@
 package com.marketplace.classifieds.domain.port.in;
 
-import com.marketplace.classifieds.adapter.in.web.dto.request.CreateClassifiedRequest;
-import com.marketplace.classifieds.adapter.in.web.dto.response.ClassifiedResponse;
+import com.marketplace.classifieds.domain.model.Classified;
+import com.marketplace.classifieds.domain.command.CreateClassifiedCommand;
 
 public interface CreateClassifiedUseCase {
 
-    ClassifiedResponse create(CreateClassifiedRequest request);
+    Classified create(CreateClassifiedCommand command);
 }

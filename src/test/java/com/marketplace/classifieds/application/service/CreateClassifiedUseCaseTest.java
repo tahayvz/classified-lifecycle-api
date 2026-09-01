@@ -1,7 +1,6 @@
 package com.marketplace.classifieds.application.service;
 
-import com.marketplace.classifieds.adapter.in.web.dto.request.CreateClassifiedRequest;
-import com.marketplace.classifieds.adapter.in.web.dto.response.ClassifiedResponse;
+import com.marketplace.classifieds.domain.command.CreateClassifiedCommand;
 import com.marketplace.classifieds.domain.enums.ClassifiedCategory;
 import com.marketplace.classifieds.domain.enums.ClassifiedStatus;
 import com.marketplace.classifieds.domain.exception.BadWordException;
@@ -46,10 +45,11 @@ class CreateClassifiedUseCaseTest {
 
     @Test
     void create_shouldSaveClassifiedCorrectly_andReturnResponse() {
-        CreateClassifiedRequest request = new CreateClassifiedRequest(
+        CreateClassifiedCommand request = new CreateClassifiedCommand(
                 "Temiz Ev",
                 "Sıfır bina",
-                ClassifiedCategory.EMLAK
+                ClassifiedCategory.EMLAK,
+                "system"
         );
 
         LocalDateTime now = LocalDateTime.now();
@@ -69,7 +69,7 @@ class CreateClassifiedUseCaseTest {
         when(classifiedPort.save(any(Classified.class)))
                 .thenReturn(saved);
 
-        ClassifiedResponse response = service.create(request);
+        Classified response = service.create(request);
 
         verify(validationService).validateBadWords("Temiz Ev", "Sıfır bina");
         verify(validationService).validateDuplicate("Temiz Ev", "Sıfır bina", ClassifiedCategory.EMLAK);
@@ -84,10 +84,11 @@ class CreateClassifiedUseCaseTest {
 
     @Test
     void create_shouldFail_whenBadWordsFound() {
-        CreateClassifiedRequest req = new CreateClassifiedRequest(
+        CreateClassifiedCommand req = new CreateClassifiedCommand(
                 "opsiyonlu",
                 "mpi İçerik",
-                ClassifiedCategory.DIGER
+                ClassifiedCategory.DIGER,
+                "system"
         );
 
         doThrow(new BadWordException("Yasaklı kelime"))
@@ -100,10 +101,11 @@ class CreateClassifiedUseCaseTest {
 
     @Test
     void create_shouldFail_whenDuplicateExists() {
-        CreateClassifiedRequest req = new CreateClassifiedRequest(
+        CreateClassifiedCommand req = new CreateClassifiedCommand(
                 "Başlık",
                 "Açıklama",
-                ClassifiedCategory.ALISVERIS
+                ClassifiedCategory.ALISVERIS,
+                "system"
         );
 
         doNothing().when(validationService).validateBadWords(anyString(), anyString());

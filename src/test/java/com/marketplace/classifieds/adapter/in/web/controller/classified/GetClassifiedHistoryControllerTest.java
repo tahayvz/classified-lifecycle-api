@@ -1,7 +1,7 @@
 package com.marketplace.classifieds.adapter.in.web.controller.classified;
 
 import com.marketplace.classifieds.adapter.in.web.controller.ClassifiedController;
-import com.marketplace.classifieds.adapter.in.web.dto.response.StatusHistoryResponse;
+import com.marketplace.classifieds.domain.model.ClassifiedStatusHistory;
 import com.marketplace.classifieds.adapter.in.web.exception.GlobalExceptionHandler;
 import com.marketplace.classifieds.domain.enums.ClassifiedStatus;
 import com.marketplace.classifieds.domain.exception.ClassifiedNotFoundException;
@@ -64,8 +64,8 @@ class GetClassifiedHistoryControllerTest {
     @Test
     void history_shouldReturn200_withList() throws Exception {
 
-        List<StatusHistoryResponse> fakeHistory = List.of(
-                StatusHistoryResponse.builder()
+        List<ClassifiedStatusHistory> fakeHistory = List.of(
+                ClassifiedStatusHistory.builder()
                         .id(1L)
                         .previousStatus(ClassifiedStatus.ONAY_BEKLIYOR)
                         .newStatus(ClassifiedStatus.AKTIF)
@@ -73,7 +73,7 @@ class GetClassifiedHistoryControllerTest {
                         .changedBy("system")
                         .reason("Aktif edildi")
                         .build(),
-                StatusHistoryResponse.builder()
+                ClassifiedStatusHistory.builder()
                         .id(2L)
                         .previousStatus(ClassifiedStatus.AKTIF)
                         .newStatus(ClassifiedStatus.DEAKTIF)
@@ -97,7 +97,7 @@ class GetClassifiedHistoryControllerTest {
 
     @Test
     void getHistory_shouldReturn200_whenFound() throws Exception {
-        StatusHistoryResponse h1 = StatusHistoryResponse.builder()
+        ClassifiedStatusHistory h1 = ClassifiedStatusHistory.builder()
                 .id(1L)
                 .previousStatus(ClassifiedStatus.ONAY_BEKLIYOR)
                 .newStatus(ClassifiedStatus.AKTIF)

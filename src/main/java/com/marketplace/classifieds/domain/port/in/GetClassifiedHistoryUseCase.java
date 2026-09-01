@@ -1,10 +1,10 @@
 package com.marketplace.classifieds.domain.port.in;
 
-import com.marketplace.classifieds.adapter.in.web.dto.response.StatusHistoryResponse;
+import com.marketplace.classifieds.domain.model.ClassifiedStatusHistory;
 
 import java.util.List;
 
 public interface GetClassifiedHistoryUseCase {
 
-    List<StatusHistoryResponse> getStatusHistory(Long id);
+    List<ClassifiedStatusHistory> getStatusHistory(Long id);
 }

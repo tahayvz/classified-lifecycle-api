@@ -3,7 +3,8 @@ package com.marketplace.classifieds.adapter.in.web.controller.classified;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.marketplace.classifieds.adapter.in.web.controller.ClassifiedController;
 import com.marketplace.classifieds.adapter.in.web.dto.request.CreateClassifiedRequest;
-import com.marketplace.classifieds.adapter.in.web.dto.response.ClassifiedResponse;
+import com.marketplace.classifieds.domain.model.Classified;
+import com.marketplace.classifieds.domain.command.CreateClassifiedCommand;
 import com.marketplace.classifieds.adapter.in.web.exception.GlobalExceptionHandler;
 import com.marketplace.classifieds.domain.enums.ClassifiedCategory;
 import com.marketplace.classifieds.domain.exception.BadWordException;
@@ -75,7 +76,7 @@ class CreateClassifiedControllerTest {
                 ClassifiedCategory.EMLAK
         );
 
-        ClassifiedResponse fakeResponse = ClassifiedResponse.builder()
+        Classified fakeResponse = Classified.builder()
                 .id(10L)
                 .title(request.getTitle())
                 .description(request.getDescription())
@@ -112,7 +113,7 @@ class CreateClassifiedControllerTest {
         CreateClassifiedRequest req =
                 new CreateClassifiedRequest("Opsiyonlu Başlık", "Bu açıklama 20 karakterden uzun", ClassifiedCategory.DIGER);
 
-        when(createClassifiedUseCase.create(any(CreateClassifiedRequest.class)))
+        when(createClassifiedUseCase.create(any(CreateClassifiedCommand.class)))
                 .thenThrow(new BadWordException("İçerikte yasaklı kelime bulundu"));
 
         mockMvc.perform(post("/api/v1/classifieds")
@@ -129,7 +130,7 @@ class CreateClassifiedControllerTest {
         CreateClassifiedRequest req =
                 new CreateClassifiedRequest("Aynı Başlık", "Bu açıklama 20 karakterden uzun", ClassifiedCategory.EMLAK);
 
-        when(createClassifiedUseCase.create(req))
+        when(createClassifiedUseCase.create(any(CreateClassifiedCommand.class)))
                 .thenThrow(new DuplicateClassifiedException("Aynı ilan daha önce eklenmiş."));
 
         mockMvc.perform(post("/api/v1/classifieds")
@@ -145,7 +146,7 @@ class CreateClassifiedControllerTest {
         CreateClassifiedRequest req =
                 new CreateClassifiedRequest("Yeni Başlık", "Bu açıklama 20 karakterden uzun", ClassifiedCategory.DIGER);
 
-        when(createClassifiedUseCase.create(req))
+        when(createClassifiedUseCase.create(any(CreateClassifiedCommand.class)))
                 .thenThrow(new RuntimeException("Patladı"));
 
         mockMvc.perform(post("/api/v1/classifieds")

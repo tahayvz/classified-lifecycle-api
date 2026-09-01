@@ -1,9 +1,10 @@
 package com.marketplace.classifieds.domain.port.out;
 
 import com.marketplace.classifieds.domain.enums.ClassifiedCategory;
+import com.marketplace.classifieds.domain.enums.ClassifiedStatus;
 import com.marketplace.classifieds.domain.model.Classified;
 
-import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 
 public interface ClassifiedPort {
@@ -14,6 +15,5 @@ public interface ClassifiedPort {
 
     boolean existsByTitleAndDescription(String title, String description, ClassifiedCategory category);
 
-    List<Object[]> countByStatusGrouped();
-
+    Map<ClassifiedStatus, Long> countByStatus();
 }

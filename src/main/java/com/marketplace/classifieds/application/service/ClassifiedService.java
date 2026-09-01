@@ -1,31 +1,24 @@
 package com.marketplace.classifieds.application.service;
 
-import com.marketplace.classifieds.domain.model.Classified;
 import com.marketplace.classifieds.domain.exception.ClassifiedNotFoundException;
-
+import com.marketplace.classifieds.domain.model.Classified;
+import com.marketplace.classifieds.domain.model.ClassifiedStatistics;
+import com.marketplace.classifieds.domain.model.ClassifiedStatusHistory;
 import com.marketplace.classifieds.domain.port.in.CreateClassifiedUseCase;
-import com.marketplace.classifieds.domain.port.in.GetClassifiedUseCase;
-import com.marketplace.classifieds.domain.port.in.UpdateClassifiedStatusUseCase;
 import com.marketplace.classifieds.domain.port.in.GetClassifiedHistoryUseCase;
+import com.marketplace.classifieds.domain.port.in.GetClassifiedUseCase;
 import com.marketplace.classifieds.domain.port.in.GetStatisticsUseCase;
-
+import com.marketplace.classifieds.domain.port.in.UpdateClassifiedStatusUseCase;
+import com.marketplace.classifieds.domain.command.CreateClassifiedCommand;
+import com.marketplace.classifieds.domain.command.UpdateClassifiedStatusCommand;
 import com.marketplace.classifieds.domain.port.out.ClassifiedPort;
 import com.marketplace.classifieds.domain.port.out.ClassifiedStatusHistoryPort;
-
 import com.marketplace.classifieds.domain.service.ClassifiedStatusService;
 import com.marketplace.classifieds.domain.service.ClassifiedValidationService;
-import com.marketplace.classifieds.adapter.in.web.dto.request.CreateClassifiedRequest;
-import com.marketplace.classifieds.adapter.in.web.dto.request.UpdateClassifiedStatusRequest;
-import com.marketplace.classifieds.adapter.in.web.dto.response.ClassifiedResponse;
-import com.marketplace.classifieds.adapter.in.web.dto.response.ClassifiedStatisticsResponse;
-import com.marketplace.classifieds.adapter.in.web.dto.response.StatusHistoryResponse;
-
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
-import java.util.Map;
-import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
@@ -43,91 +36,49 @@ public class ClassifiedService implements
     private final ClassifiedStatusService statusService;
 
     @Override
-    public ClassifiedResponse create(CreateClassifiedRequest request) {
+    public Classified create(CreateClassifiedCommand command) {
 
-        validationService.validateBadWords(request.getTitle(), request.getDescription());
-        validationService.validateDuplicate(request.getTitle(), request.getDescription(), request.getCategory());
+        validationService.validateBadWords(command.title(), command.description());
+        validationService.validateDuplicate(command.title(), command.description(), command.category());
 
-        Classified saved = classifiedPort.save(
+        return classifiedPort.save(
                 Classified.builder()
-                        .title(request.getTitle())
-                        .description(request.getDescription())
-                        .category(request.getCategory())
-                        .createdBy("system")
+                        .title(command.title())
+                        .description(command.description())
+                        .category(command.category())
+                        .createdBy(command.createdBy())
                         .build()
         );
-
-        return toResponse(saved);
     }
 
     @Override
-    public ClassifiedResponse get(Long id) {
-        return toResponse(find(id));
+    public Classified get(Long id) {
+        return find(id);
     }
 
     @Override
-    public ClassifiedResponse updateStatus(Long id, UpdateClassifiedStatusRequest request, String changedBy) {
-        Classified c = find(id);
+    public Classified updateStatus(Long id, UpdateClassifiedStatusCommand command) {
+        Classified classified = find(id);
 
-        statusService.changeStatus(c, request.getStatus(), changedBy, request.getReason());
+        statusService.changeStatus(classified, command.status(), command.changedBy(), command.reason());
 
-        Classified updated = classifiedPort.save(c);
-
-        return toResponse(updated);
+        return classifiedPort.save(classified);
     }
 
     @Override
-    public List<StatusHistoryResponse> getStatusHistory(Long id) {
+    public List<ClassifiedStatusHistory> getStatusHistory(Long id) {
         find(id);
 
-        return historyPort
-                .findByClassifiedIdOrderByChangedAtDesc(id)
-                .stream()
-                .map(h -> StatusHistoryResponse.builder()
-                        .id(h.getId())
-                        .previousStatus(h.getPreviousStatus())
-                        .newStatus(h.getNewStatus())
-                        .changedAt(h.getChangedAt())
-                        .changedBy(h.getChangedBy())
-                        .reason(h.getReason())
-                        .build())
-                .collect(Collectors.toList());
+        return historyPort.findByClassifiedIdOrderByChangedAtDesc(id);
     }
 
     @Override
-    public ClassifiedStatisticsResponse getStatistics() {
-        var grouped = classifiedPort.countByStatusGrouped();
-
-        Map<String, Long> stats = grouped.stream()
-                .collect(Collectors.toMap(
-                        row -> row[0] == null ? "UNKNOWN" : row[0].toString(),
-                        row -> row[1] == null ? 0L : (Long) row[1]
-                ));
-
-        long total = stats.values().stream().mapToLong(Long::longValue).sum();
-
-        return ClassifiedStatisticsResponse.builder()
-                .statistics(stats)
-                .totalClassifieds(total)
-                .build();
+    public ClassifiedStatistics getStatistics() {
+        return ClassifiedStatistics.of(classifiedPort.countByStatus());
     }
 
     private Classified find(Long id) {
         return classifiedPort.findById(id)
                 .orElseThrow(() -> new ClassifiedNotFoundException("İlan bulunamadı: " + id));
-    }
-
-    private ClassifiedResponse toResponse(Classified c) {
-        return ClassifiedResponse.builder()
-                .id(c.getId())
-                .title(c.getTitle())
-                .description(c.getDescription())
-                .category(c.getCategory())
-                .status(c.getStatus())
-                .endDate(c.getEndDate())
-                .createdAt(c.getCreatedAt())
-                .updatedAt(c.getUpdatedAt())
-                .createdBy(c.getCreatedBy())
-                .build();
     }
 }
