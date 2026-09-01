@@ -1,226 +1,213 @@
 # Classified Lifecycle API
 
-Classified Lifecycle API is a Spring Boot service for creating classified listings,
-managing their publication status, tracking status history, and exposing aggregate
+[![CI](https://github.com/tahayvz/classified-lifecycle-api/actions/workflows/ci.yml/badge.svg)](https://github.com/tahayvz/classified-lifecycle-api/actions/workflows/ci.yml)
+[![CodeQL](https://github.com/tahayvz/classified-lifecycle-api/actions/workflows/codeql.yml/badge.svg)](https://github.com/tahayvz/classified-lifecycle-api/actions/workflows/codeql.yml)
+[![Java](https://img.shields.io/badge/Java-17-007396?logo=openjdk&logoColor=white)](https://openjdk.org/projects/jdk/17/)
+[![Spring Boot](https://img.shields.io/badge/Spring%20Boot-3.5-6DB33F?logo=springboot&logoColor=white)](https://spring.io/projects/spring-boot)
+[![License](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
+
+A Spring Boot service for the lifecycle of classified listings: creating them, moving them
+through an explicit status state machine, recording every transition, and exposing aggregate
 dashboard statistics.
 
-The project keeps the core domain rules isolated from persistence and web adapters,
-so the business behavior can be tested without depending on HTTP or database details.
+The point of the project is the **boundary discipline**. Business rules live in a core that
+knows nothing about HTTP, JPA or Spring, and that separation is enforced by
+[ArchUnit tests](src/test/java/com/marketplace/classifieds/architecture/HexagonalArchitectureTest.java)
+that fail the build when a dependency points the wrong way.
+
+---
 
 ## Architecture
 
-The project follows a pragmatic Hexagonal Architecture, also known as Ports and
-Adapters. Business rules live in the center of the application, while HTTP,
-persistence, validation-file loading, and framework-specific concerns stay at the
-edges.
+Hexagonal (ports & adapters). Dependencies point inward: adapters know the core, the core
+never knows its adapters.
 
-This keeps the listing lifecycle logic independent from Spring MVC, JPA, and H2.
-The API can change its transport or persistence implementation without rewriting
-the core domain behavior.
+```mermaid
+flowchart TB
+    subgraph inbound["Inbound adapters"]
+        REST["adapter.in.web<br/>controllers · DTOs · exception handler"]
+    end
 
-```text
-HTTP Request
-    |
-    v
-adapter/in/web/controller
-    |
-    v
-domain/port/in
-    |
-    v
-application/service
-    |
-    v
-domain/service + domain/model
-    |
-    v
-domain/port/out
-    |
-    v
-adapter/out/persistence or adapter/out/validation
+    subgraph core["Application core"]
+        APP["application.service<br/>use-case orchestration"]
+        PIN["domain.port.in<br/>use-case contracts"]
+        DS["domain.service<br/>status &amp; validation rules"]
+        DM["domain.model + domain.enums<br/>Classified · StatusHistory · state machine"]
+        POUT["domain.port.out<br/>outbound contracts"]
+    end
+
+    subgraph outbound["Outbound adapters"]
+        JPA["adapter.out.persistence<br/>Spring Data JPA"]
+        BW["adapter.out.validation<br/>bad-word list"]
+    end
+
+    REST --> PIN --> APP --> DS --> DM
+    APP --> POUT
+    POUT -.implemented by.-> JPA
+    POUT -.implemented by.-> BW
 ```
 
-### Package Structure
+Enforced by ArchUnit:
 
-- `domain/model`: core entities such as `Classified` and `ClassifiedStatusHistory`.
-- `domain/enums`: listing categories and lifecycle statuses.
-- `domain/service`: pure business rules for validation and status transitions.
-- `domain/port/in`: use-case contracts exposed to inbound adapters.
-- `domain/port/out`: outbound contracts required by the application core.
-- `application/service`: orchestration layer that coordinates domain services and ports.
-- `adapter/in/web`: REST controllers, DTOs, and HTTP exception handling.
-- `adapter/out/persistence`: JPA-backed persistence adapters.
-- `adapter/out/validation`: bad-word list adapter.
-- `config`: Spring wiring and OpenAPI configuration.
-- `aspect`: cross-cutting performance logging for slow API calls.
+| Rule | Why |
+| --- | --- |
+| `domain` must not depend on `org.springframework` | rules stay runnable without a Spring context |
+| `domain.model` / `service` / `enums` / `port.out` must not depend on `adapter` | the core must not know how it is delivered or stored |
+| `domain` must not depend on `application` | dependencies point inward only |
+| `adapter.in` must not depend on `adapter.out` | adapters talk through ports, never to each other |
+| `application` must not depend on `adapter.out` | use cases depend on contracts, not implementations |
+| everything in `domain.port` must be an interface | a port is a contract |
+| Spring Data types must not escape `adapter.out.persistence` | persistence stays replaceable |
 
-### Design Decisions
+---
 
-- **Domain-first lifecycle rules:** status transition rules are handled by
-  `ClassifiedStatusService`, keeping lifecycle behavior explicit and easy to test.
-- **Validation separated from persistence:** `ClassifiedValidationService` checks
-  title, description, category, bad words, and duplicate listings without depending
-  on controller code.
-- **Ports for dependencies:** application logic depends on `ClassifiedPort`,
-  `ClassifiedStatusHistoryPort`, and `BadWordsPort` instead of concrete JPA or file
-  implementations.
-- **Status history as a first-class concept:** every lifecycle change can be tracked
-  independently from the current listing state.
-- **In-memory database by default:** H2 keeps local execution and automated tests
-  lightweight while preserving a realistic JPA integration boundary.
-- **Observable API behavior:** the performance aspect logs requests that exceed the
-  configured 5 ms threshold without mixing logging code into controllers.
+## Lifecycle state machine
 
-## Features
+Transitions are declared on `ClassifiedStatus` and validated by `ClassifiedStatusService`
+before anything is written. All 16 from/to combinations are covered by a
+[parameterised test matrix](src/test/java/com/marketplace/classifieds/domain/enums/ClassifiedStatusTest.java).
 
-- Create classified listings with title, description, and category validation.
-- Detect duplicate listings by category, title, and description.
-- Calculate listing expiration dates by category.
-- Manage listing status transitions such as pending approval, active, inactive, and duplicate.
-- Block invalid status transitions and immutable duplicate updates.
-- Record listing status history.
-- Expose dashboard statistics for listing totals by status/category.
-- Log API calls that take longer than 5 ms.
-- Provide Swagger/OpenAPI documentation.
-- Run with Docker or Docker Compose.
+```mermaid
+stateDiagram-v2
+    [*] --> ONAY_BEKLIYOR: moderated category
+    [*] --> AKTIF: ALISVERIS
+    ONAY_BEKLIYOR --> AKTIF: approved
+    ONAY_BEKLIYOR --> DEAKTIF: rejected / withdrawn
+    AKTIF --> DEAKTIF: expired / withdrawn
+    DEAKTIF --> [*]
+    MUKERRER --> [*]
+```
 
-## Business Rules
+`DEAKTIF` and `MUKERRER` are terminal. Rejected transitions leave both the listing and its
+history untouched — a rejection is never half-applied.
 
-- A title must start with a letter or number and must be between 10 and 50 characters.
-- A description must be between 20 and 200 characters.
-- A listing category must be one of `REAL_ESTATE`, `VEHICLE`, `SHOPPING`, or `OTHER`.
-- Words listed in `Badwords.txt` are not allowed in title or description content.
-- New `REAL_ESTATE`, `VEHICLE`, and `OTHER` listings start as `PENDING_APPROVAL`.
-- New `SHOPPING` listings start as `ACTIVE`.
-- Expiration dates are calculated from the creation date:
-  - `REAL_ESTATE`: 4 weeks
-  - `VEHICLE`: 3 weeks
-  - `SHOPPING`: 8 weeks
-  - `OTHER`: 8 weeks
-- A listing with the same category, title, and description as an existing listing is marked as `DUPLICATE`.
-- Duplicate listings cannot be updated.
-- A `PENDING_APPROVAL` listing can be approved and moved to `ACTIVE`.
-- An `ACTIVE` or `PENDING_APPROVAL` listing can be moved to `INACTIVE`.
+---
 
-## API Highlights
+## Business rules
 
-- `POST /classifieds`: create a listing.
-- `GET /classifieds/{id}`: get listing details.
-- `PATCH /classifieds/{id}/status`: update listing status.
-- `GET /classifieds/{id}/history`: list status history.
-- `GET /dashboard/classifieds/statistics`: get aggregate listing statistics.
-- `GET /actuator/health`: health check.
+| Rule | Detail |
+| --- | --- |
+| Title | 10–50 characters, must start with a letter or digit |
+| Description | 20–200 characters |
+| Category | `EMLAK`, `VASITA`, `ALISVERIS`, `DIGER` |
+| Initial status | `ONAY_BEKLIYOR`, except `ALISVERIS` which starts `AKTIF` |
+| Expiry | `EMLAK` 4 weeks · `VASITA` 3 weeks · `ALISVERIS` 8 weeks · `DIGER` 8 weeks |
+| Banned words | title and description are checked against `Badwords.txt` |
+| Duplicates | same title + description + category is rejected with `409 Conflict` |
+| Immutability | a `MUKERRER` listing cannot change status |
+| History | every accepted transition is recorded with actor and reason |
 
-## Tech Stack
+---
 
-- Java 17
-- Spring Boot 3
-- Gradle with Kotlin DSL
-- Spring Web
-- Spring Data JPA
-- H2 in-memory database
-- Bean Validation
-- Lombok
-- JUnit 5 and Mockito
-- Springdoc OpenAPI
-- Docker
+## API
 
-## Run Locally
+Base path `/api/v1`.
 
-Build and test the project:
+| Method | Path | Purpose | Success |
+| --- | --- | --- | --- |
+| `POST` | `/api/v1/classifieds` | Create a listing | `201` |
+| `GET` | `/api/v1/classifieds/{id}` | Fetch a listing | `200` |
+| `PUT` | `/api/v1/classifieds/{id}/status` | Change status | `200` |
+| `GET` | `/api/v1/classifieds/{id}/history` | Transition history, newest first | `200` |
+| `GET` | `/api/v1/dashboard/statistics` | Counts per status plus total | `200` |
+| `GET` | `/actuator/health` | Health probe | `200` |
+
+Error responses:
+
+| Status | Raised when |
+| --- | --- |
+| `400` | bean validation failure, unreadable body, banned word |
+| `404` | listing does not exist |
+| `409` | duplicate listing, invalid transition, unchanged status, immutable listing |
+
+### Example
 
 ```bash
-./gradlew clean build
+curl -X POST http://localhost:8080/api/v1/classifieds \
+  -H 'Content-Type: application/json' \
+  -d '{
+        "title": "Satilik bahceli daire",
+        "description": "Merkezi konumda, genis ve ferah, otoparkli daire ilani",
+        "category": "EMLAK"
+      }'
 ```
-
-Run the application:
 
 ```bash
-./gradlew bootRun
+curl -X PUT http://localhost:8080/api/v1/classifieds/1/status \
+  -H 'Content-Type: application/json' \
+  -d '{ "status": "AKTIF", "reason": "approved by moderator" }'
 ```
 
-The API starts on:
+Interactive documentation: `http://localhost:8080/swagger-ui/index.html`
 
-```text
-http://localhost:8080
-```
+---
 
-## Docker
+## Testing
 
-Build the image:
+The suite is split so the fast tests stay fast and the slow ones stay honest.
+
+| Layer | Count | What it proves | Needs Docker |
+| --- | --- | --- | --- |
+| Domain unit tests | 45 | state machine matrix, expiry and approval defaults, transition guards | no |
+| Application unit tests | 14 | use-case orchestration against mocked ports | no |
+| Web slice tests | 27 | controller contracts, status codes, error mapping | no |
+| Persistence tests | 10 | real JPA mapping, grouped counts, history ordering | no |
+| Architecture tests | 9 | the boundaries above, as executable rules | no |
+| Adapter & bootstrap tests | 7 | bad-word loading, timing aspect, context startup | no |
+| Integration tests | 10 | full HTTP → PostgreSQL lifecycle via Testcontainers | yes |
 
 ```bash
-docker build -t classified-lifecycle-api .
+./gradlew test                 # 112 unit and slice tests, no Docker required
+./gradlew integrationTest      # end-to-end against a real PostgreSQL container
+./gradlew check                # both, plus the coverage gate
 ```
 
-Run the container:
+Coverage is a build gate, not a badge: the build fails below **90% instruction coverage
+overall** and **100% branch coverage in `domain`**. Current: 98.1% instruction, 97.7% line,
+90.0% branch.
+
+---
+
+## Running it
 
 ```bash
-docker run -d --name classified-lifecycle-api-container -p 8080:8080 classified-lifecycle-api
+./gradlew bootRun              # http://localhost:8080, H2 in memory
 ```
 
-Check the health endpoint:
-
 ```bash
-curl http://localhost:8080/actuator/health
-```
-
-Stop and remove the container:
-
-```bash
-docker stop classified-lifecycle-api-container
-docker rm classified-lifecycle-api-container
-```
-
-## Docker Compose
-
-Start the service:
-
-```bash
-docker compose up --build -d
-```
-
-View logs:
-
-```bash
+docker compose up --build -d   # containerised, health-checked
 docker compose logs -f classified-lifecycle-api
-```
-
-Stop the service:
-
-```bash
 docker compose down
 ```
 
-## API Documentation
+H2 is the default so the service starts with no dependencies. Integration tests run against
+PostgreSQL 16 to keep the JPA mapping honest against a real database.
 
-After the application starts, OpenAPI documentation is available at:
+---
 
-- Swagger UI: http://localhost:8080/swagger-ui/index.html
-- OpenAPI JSON: http://localhost:8080/v3/api-docs
+## Tech
 
-## Tests
+Java 17 · Spring Boot 3.5 · Spring Web · Spring Data JPA · Bean Validation · Actuator ·
+springdoc OpenAPI · Lombok · Gradle (Kotlin DSL) · H2 · PostgreSQL · JUnit 5 · Mockito ·
+AssertJ · ArchUnit · Testcontainers · JaCoCo · Docker · GitHub Actions
 
-Run the full test suite:
+---
 
-```bash
-./gradlew test
-```
+## Known limitations
 
-The test suite covers domain services, application use cases, web controllers,
-exception handling, and performance logging behavior.
+Kept explicit rather than hidden, since they are design trade-offs rather than oversights:
 
-### Testing Strategy
+- **`MUKERRER` is currently unreachable.** Duplicate submissions are rejected with `409`
+  instead of being stored and flagged, so no listing ever enters that state. The status and
+  its immutability guard exist for the flagging workflow, which is not implemented yet.
+- **Inbound ports carry web DTOs.** `domain.port.in` references request and response types
+  from `adapter.in.web.dto`, which is why the ArchUnit boundary rule covers the domain core
+  rather than the whole `domain` package. Introducing dedicated command and result types is
+  the next refactor.
+- **Error bodies are ad-hoc JSON**, not RFC 7807 `application/problem+json`.
+- **No authentication.** The status endpoint records a hard-coded `system` actor.
+- **Schema is generated by Hibernate** (`ddl-auto`), with no migration tool.
 
-- **Domain service tests** verify lifecycle transitions, immutable states,
-  validation boundaries, duplicate detection, and bad-word handling.
-- **Application use-case tests** verify orchestration between domain services,
-  persistence ports, history recording, and response mapping.
-- **Controller tests** verify REST contracts, request validation, response payloads,
-  and exception-to-HTTP-status mapping.
-- **Aspect tests** verify slow-request logging behavior separately from business
-  logic.
+## License
 
-This split makes failures easier to diagnose: a domain rule failure points to the
-core business behavior, while a controller failure usually points to API contract
-or serialization behavior.
+MIT — see [LICENSE](LICENSE).
