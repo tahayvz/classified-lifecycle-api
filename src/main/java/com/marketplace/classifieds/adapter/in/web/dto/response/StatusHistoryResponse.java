@@ -20,13 +20,13 @@ public class StatusHistoryResponse {
     private Long id;
 
     @Schema(
-            description = "Önceki ilan durumu (ONAY_BEKLIYOR, ACTIVE, DEACTIVE, MUKERRER)",
+            description = "Önceki ilan durumu (ONAY_BEKLIYOR, AKTIF, DEAKTIF)",
             example = "ONAY_BEKLIYOR"
     )
     private ClassifiedStatus previousStatus;
 
     @Schema(
-            description = "Yeni ilan durumu (ONAY_BEKLIYOR, ACTIVE, DEACTIVE, MUKERRER)",
+            description = "Yeni ilan durumu (ONAY_BEKLIYOR, AKTIF, DEAKTIF)",
             example = "ACTIVE"
     )
     private ClassifiedStatus newStatus;

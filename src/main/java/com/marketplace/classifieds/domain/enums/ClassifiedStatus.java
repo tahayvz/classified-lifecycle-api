@@ -7,8 +7,7 @@ public enum ClassifiedStatus {
 
     ONAY_BEKLIYOR,
     AKTIF,
-    DEAKTIF,
-    MUKERRER;
+    DEAKTIF;
 
     private Set<ClassifiedStatus> nextStates;
 
@@ -16,7 +15,6 @@ public enum ClassifiedStatus {
         ONAY_BEKLIYOR.nextStates = EnumSet.of(AKTIF, DEAKTIF);
         AKTIF.nextStates = EnumSet.of(DEAKTIF);
         DEAKTIF.nextStates = EnumSet.noneOf(ClassifiedStatus.class);
-        MUKERRER.nextStates = EnumSet.noneOf(ClassifiedStatus.class);
     }
 
     public boolean canTransitionTo(ClassifiedStatus next) {

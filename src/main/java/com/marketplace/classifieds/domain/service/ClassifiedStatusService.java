@@ -1,7 +1,6 @@
 package com.marketplace.classifieds.domain.service;
 
 import com.marketplace.classifieds.domain.enums.ClassifiedStatus;
-import com.marketplace.classifieds.domain.exception.ImmutableClassifiedException;
 import com.marketplace.classifieds.domain.exception.InvalidStatusTransitionException;
 import com.marketplace.classifieds.domain.exception.SameStatusException;
 import com.marketplace.classifieds.domain.model.Classified;
@@ -30,10 +29,6 @@ public class ClassifiedStatusService {
     }
 
     private void validateTransition(ClassifiedStatus previous, ClassifiedStatus next, Classified classified) {
-
-        if (previous == ClassifiedStatus.MUKERRER) {
-            throw new ImmutableClassifiedException("Mükerrer ilanların durumu güncellenemez. İlan id: " + classified.getId());
-        }
 
         if (previous == next) {
             throw new SameStatusException("İlan zaten bu durumda: " + previous + ". İlan id: " + classified.getId());

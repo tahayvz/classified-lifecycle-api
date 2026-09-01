@@ -28,8 +28,6 @@ class ClassifiedStatusTest {
                 EnumSet.of(ClassifiedStatus.DEAKTIF));
         ALLOWED.put(ClassifiedStatus.DEAKTIF,
                 EnumSet.noneOf(ClassifiedStatus.class));
-        ALLOWED.put(ClassifiedStatus.MUKERRER,
-                EnumSet.noneOf(ClassifiedStatus.class));
     }
 
     static Stream<Arguments> allTransitionPairs() {
@@ -60,7 +58,7 @@ class ClassifiedStatusTest {
     }
 
     @ParameterizedTest
-    @EnumSource(value = ClassifiedStatus.class, names = {"DEAKTIF", "MUKERRER"})
+    @EnumSource(value = ClassifiedStatus.class, names = {"DEAKTIF"})
     void terminalStatuses_shouldAllowNoOutgoingTransition(ClassifiedStatus terminal) {
         assertThat(Arrays.stream(ClassifiedStatus.values()).anyMatch(terminal::canTransitionTo))
                 .isFalse();
@@ -70,12 +68,5 @@ class ClassifiedStatusTest {
     void deaktif_shouldBeReachableFromEveryNonTerminalStatus() {
         assertThat(ClassifiedStatus.ONAY_BEKLIYOR.canTransitionTo(ClassifiedStatus.DEAKTIF)).isTrue();
         assertThat(ClassifiedStatus.AKTIF.canTransitionTo(ClassifiedStatus.DEAKTIF)).isTrue();
-    }
-
-    @Test
-    void mukerrer_shouldNotBeReachableFromAnyStatus() {
-        assertThat(Arrays.stream(ClassifiedStatus.values())
-                .anyMatch(s -> s.canTransitionTo(ClassifiedStatus.MUKERRER)))
-                .isFalse();
     }
 }

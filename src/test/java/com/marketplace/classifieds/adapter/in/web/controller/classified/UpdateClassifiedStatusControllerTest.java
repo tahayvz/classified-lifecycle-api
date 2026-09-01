@@ -8,7 +8,6 @@ import com.marketplace.classifieds.adapter.in.web.exception.GlobalExceptionHandl
 import com.marketplace.classifieds.domain.enums.ClassifiedCategory;
 import com.marketplace.classifieds.domain.enums.ClassifiedStatus;
 import com.marketplace.classifieds.domain.exception.ClassifiedNotFoundException;
-import com.marketplace.classifieds.domain.exception.ImmutableClassifiedException;
 import com.marketplace.classifieds.domain.exception.InvalidStatusTransitionException;
 import com.marketplace.classifieds.domain.exception.SameStatusException;
 import com.marketplace.classifieds.domain.port.in.*;
@@ -138,21 +137,6 @@ class UpdateClassifiedStatusControllerTest {
                         .content(objectMapper.writeValueAsString(request)))
                 .andExpect(status().isConflict())
                 .andExpect(jsonPath("$.message").value("İlan zaten bu durumda"));
-    }
-
-    @Test
-    void updateStatus_shouldReturn409_whenImmutable() throws Exception {
-        UpdateClassifiedStatusRequest request =
-                new UpdateClassifiedStatusRequest(ClassifiedStatus.DEAKTIF, "neden");
-
-        when(updateStatusUseCase.updateStatus(anyLong(), any(), any()))
-                .thenThrow(new ImmutableClassifiedException("Mükerrer ilan güncellenemez"));
-
-        mockMvc.perform(put("/api/v1/classifieds/10/status")
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .content(objectMapper.writeValueAsString(request)))
-                .andExpect(status().isConflict())
-                .andExpect(jsonPath("$.message").value("Mükerrer ilan güncellenemez"));
     }
 
     @Test

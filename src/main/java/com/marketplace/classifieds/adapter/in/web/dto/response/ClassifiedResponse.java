@@ -33,7 +33,7 @@ public class ClassifiedResponse {
     private ClassifiedCategory category;
 
     @Schema(
-            description = "İlanın mevcut durumu (ONAY_BEKLIYOR, AKTIF, DEAKTIF, MUKERRER)",
+            description = "İlanın mevcut durumu (ONAY_BEKLIYOR, AKTIF, DEAKTIF)",
             example = "AKTIF"
     )
     private ClassifiedStatus status;

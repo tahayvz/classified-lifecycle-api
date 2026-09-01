@@ -91,15 +91,6 @@ public class GlobalExceptionHandler {
         return ResponseEntity.status(HttpStatus.CONFLICT).body(body);
     }
 
-    @ExceptionHandler(ImmutableClassifiedException.class)
-    public ResponseEntity<?> handleImmutable(ImmutableClassifiedException ex) {
-        Map<String, Object> body = new HashMap<>();
-        body.put("message", ex.getMessage());
-        body.put("timestamp", LocalDateTime.now());
-        body.put("status", 409);
-        return ResponseEntity.status(HttpStatus.CONFLICT).body(body);
-    }
-
 
     private ResponseEntity<Object> buildResponse(String message, HttpStatus status) {
         Map<String, Object> response = new HashMap<>();

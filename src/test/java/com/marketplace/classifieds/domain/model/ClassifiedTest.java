@@ -43,11 +43,11 @@ class ClassifiedTest {
     @Test
     void prePersist_shouldKeepExplicitStatus() {
         Classified classified = withCategory(ClassifiedCategory.EMLAK);
-        classified.setStatus(ClassifiedStatus.MUKERRER);
+        classified.setStatus(ClassifiedStatus.DEAKTIF);
 
         classified.prePersist();
 
-        assertThat(classified.getStatus()).isEqualTo(ClassifiedStatus.MUKERRER);
+        assertThat(classified.getStatus()).isEqualTo(ClassifiedStatus.DEAKTIF);
     }
 
     @ParameterizedTest

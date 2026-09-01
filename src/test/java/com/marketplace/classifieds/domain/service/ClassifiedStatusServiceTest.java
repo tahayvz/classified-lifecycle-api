@@ -1,7 +1,6 @@
 package com.marketplace.classifieds.domain.service;
 
 import com.marketplace.classifieds.domain.enums.ClassifiedStatus;
-import com.marketplace.classifieds.domain.exception.ImmutableClassifiedException;
 import com.marketplace.classifieds.domain.exception.InvalidStatusTransitionException;
 import com.marketplace.classifieds.domain.exception.SameStatusException;
 import com.marketplace.classifieds.domain.model.Classified;
@@ -31,17 +30,6 @@ class ClassifiedStatusServiceTest {
                 .id(10L)
                 .status(status)
                 .build();
-    }
-
-    @Test
-    void changeStatus_shouldThrow_whenClassifiedIsImmutable() {
-        Classified c = createClassified(ClassifiedStatus.MUKERRER);
-
-        assertThatThrownBy(() ->
-                statusService.changeStatus(c, ClassifiedStatus.AKTIF, "admin", "test"))
-                .isInstanceOf(ImmutableClassifiedException.class);
-
-        verify(historyPort, never()).save(any());
     }
 
     @Test
