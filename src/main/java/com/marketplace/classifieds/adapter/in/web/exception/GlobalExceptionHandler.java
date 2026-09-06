@@ -1,6 +1,8 @@
 package com.marketplace.classifieds.adapter.in.web.exception;
 
 import com.marketplace.classifieds.domain.exception.*;
+import org.springframework.dao.DataIntegrityViolationException;
+import org.springframework.dao.OptimisticLockingFailureException;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.http.converter.HttpMessageNotReadableException;
@@ -54,6 +56,34 @@ public class GlobalExceptionHandler {
         body.put("errors", errors);
 
         return new ResponseEntity<>(body, HttpStatus.BAD_REQUEST);
+    }
+
+    /**
+     * Yinelenen ilan kısıtı veritabanı tarafından reddedildi.
+     *
+     * <p>Uygulama önce "böyle bir ilan var mı" diye soruyor, sonra yazıyor. İki
+     * eşzamanlı istek arasındaki boşlukta ikisi de kontrolden geçebilir; benzersizlik
+     * kısıtı ikincisini veritabanında durdurur. Bu bir sunucu arızası değil, aynı
+     * kuralın ikinci savunma hattıdır — 500 değil <b>409</b> dönmeli, tıpkı
+     * kontrolün yakaladığı durumda olduğu gibi.
+     */
+    @ExceptionHandler(DataIntegrityViolationException.class)
+    public ResponseEntity<Object> handleDataIntegrity(DataIntegrityViolationException ex) {
+        return buildResponse("Aynı ilan daha önce eklenmiş.", HttpStatus.CONFLICT);
+    }
+
+    /**
+     * İki eşzamanlı durum değişikliği çakıştı.
+     *
+     * <p>{@code @Version} olmadan ikisi de yazılır ve biri diğerini sessizce ezerdi;
+     * geçmiş tablosuna iki satır girer, ilan tek duruma geçerdi. Artık ikincisi
+     * reddediliyor ve çağıran tekrar deneyebilir.
+     */
+    @ExceptionHandler(OptimisticLockingFailureException.class)
+    public ResponseEntity<Object> handleConcurrentUpdate(OptimisticLockingFailureException ex) {
+        return buildResponse(
+                "İlan bu sırada başka bir istek tarafından güncellendi. Lütfen tekrar deneyin.",
+                HttpStatus.CONFLICT);
     }
 
     @ExceptionHandler(Exception.class)

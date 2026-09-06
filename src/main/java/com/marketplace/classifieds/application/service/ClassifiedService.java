@@ -17,6 +17,7 @@ import com.marketplace.classifieds.domain.service.ClassifiedStatusService;
 import com.marketplace.classifieds.domain.service.ClassifiedValidationService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
 
@@ -36,6 +37,7 @@ public class ClassifiedService implements
     private final ClassifiedStatusService statusService;
 
     @Override
+    @Transactional
     public Classified create(CreateClassifiedCommand command) {
 
         validationService.validateBadWords(command.title(), command.description());
@@ -52,11 +54,26 @@ public class ClassifiedService implements
     }
 
     @Override
+    @Transactional(readOnly = true)
     public Classified get(Long id) {
         return find(id);
     }
 
+    /**
+     * Durum degisikligi ve gecmis kaydi AYNI transaction'da yazilir.
+     *
+     * <p>Once boyle degildi: {@code changeStatus} icindeki
+     * {@code historyPort.save(...)} Spring Data'nin kendi transaction'inda
+     * hemen commit ediyordu, ilanin kaydi ise ayri bir transaction'da
+     * yaziliyordu. Ikisinin arasinda bir hata olursa gecmis tablosu
+     * gerceklesmemis bir gecisi anlatiyordu: kayit "ACTIVE -> PASSIVE" derken
+     * ilan ACTIVE kaliyordu.
+     *
+     * <p>Bu servisin varlik sebebi ilanin denetlenebilir gecmisi. Gecmis ile
+     * gercek durum ayrisirsa kaydin bir degeri kalmaz.
+     */
     @Override
+    @Transactional
     public Classified updateStatus(Long id, UpdateClassifiedStatusCommand command) {
         Classified classified = find(id);
 
@@ -66,6 +83,7 @@ public class ClassifiedService implements
     }
 
     @Override
+    @Transactional(readOnly = true)
     public List<ClassifiedStatusHistory> getStatusHistory(Long id) {
         find(id);
 
@@ -73,6 +91,7 @@ public class ClassifiedService implements
     }
 
     @Override
+    @Transactional(readOnly = true)
     public ClassifiedStatistics getStatistics() {
         return ClassifiedStatistics.of(classifiedPort.countByStatus());
     }

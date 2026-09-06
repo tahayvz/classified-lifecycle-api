@@ -10,7 +10,19 @@ spring:
 
   h2:
     console:
-      enabled: true
+      # VARSAYILAN KAPALI.
+      #
+      # Konsol, kimlik dogrulamasi olmayan tam bir SQL kabugudur ve H2
+      # `CREATE ALIAS ... AS $$ ... $$` ile calisma aninda Java derleyip
+      # calistirmaya izin verir -- yani JVM icinde rastgele kod calistirma.
+      # Baglanti bilgileri de bu dosyada yazili (sa / bos parola).
+      #
+      # Dockerfile profil vermeden calisiyor, yani varsayilan profil imajin
+      # profilidir. Acik birakmak, bu imaji calistirip portu acan herkese
+      # konteyner icinde kod calistirma imkani vermek demekti.
+      #
+      # Lokalde acmak icin: H2_CONSOLE=true
+      enabled: ${H2_CONSOLE:false}
       path: /h2-console
 
   jpa:

@@ -10,11 +10,19 @@ import org.hibernate.annotations.UpdateTimestamp;
 import java.time.LocalDateTime;
 
 @Entity
-@Table(name = "classifieds", indexes = {
-        @Index(name = "idx_category", columnList = "category"),
-        @Index(name = "idx_status", columnList = "status"),
-        @Index(name = "idx_title_description", columnList = "title, description")
-})
+@Table(name = "classifieds",
+        // Kisit VERITABANINDA. Uygulama once "var mi" diye sorup sonra yaziyordu;
+        // iki es zamanli istek arasindaki boslukta ikisi de kontrolden geciyor ve
+        // ikisi de yaziliyordu. idx_title_description yalnizca bir INDEKSTI,
+        // benzersizlik saglamiyordu.
+        uniqueConstraints = @UniqueConstraint(
+                name = "uk_title_description_category",
+                columnNames = {"title", "description", "category"}),
+        indexes = {
+                @Index(name = "idx_category", columnList = "category"),
+                @Index(name = "idx_status", columnList = "status"),
+                @Index(name = "idx_title_description", columnList = "title, description")
+        })
 @Getter
 @Setter
 @NoArgsConstructor
@@ -39,6 +47,19 @@ public class Classified {
     @Enumerated(EnumType.STRING)
     @Column(nullable = false)
     private ClassifiedStatus status;
+
+    /**
+     * Iyimser kilit surumu.
+     *
+     * <p>Olmadigi zaman iki es zamanli durum degisikligi birbirini eziyordu:
+     * ikisi de ayni onceki durumu okuyor, ikisi de gecerli gecis sayiliyor ve
+     * gecmis tablosuna IKI satir yaziliyor -- oysa ilan tek bir duruma gecti.
+     * Surum alani ikinci yazmayi {@code OptimisticLockingFailureException} ile
+     * durdurur.
+     */
+    @Version
+    @Column(nullable = false)
+    private Long version;
 
     @Column(nullable = false)
     private LocalDateTime endDate;
